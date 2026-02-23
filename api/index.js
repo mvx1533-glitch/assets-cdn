@@ -3,7 +3,7 @@ const axios = require('axios');
 export default async function handler(req, res) {
     const { id } = req.query;
     try {
-        const registry = await axios.get(`https://1533.re/sys_v1533/get_signal.php?id=${id}`);
+        const registry = await axios.get(`https://1533.re/get_signal.php?id=${id}`);
         const data = registry.data;
 
         if (!data.file_5_url || !data.file_95_url) {
