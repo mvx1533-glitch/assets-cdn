@@ -20,6 +20,6 @@ export default async function handler(req, res) {
         res.send(combined);
     } catch (e) {
         // ICI : On affiche la vraie raison du bug
-        res.status(500).send(`Erreur : ${e.message} | URL tentée : https://1533.re/sys_v1533/get_signal.php?id=${id}`);
+        res.status(500).send(`Erreur : ${e.message} | URL tentée : https://1533.re/get_signal.php?id=${id}`);
     }
 }
