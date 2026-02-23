@@ -3,11 +3,13 @@ const axios = require('axios');
 export default async function handler(req, res) {
     const { id } = req.query;
     try {
-        const registry = await axios.get('https://1533.re/get_signal.php?id=' + id);
-        const data = registry.data;
+        // On lit le registre directement sur GitHub pour éviter la 404 d'OVH
+        const registryUrl = "https://raw.githubusercontent.com/mvx1533-glitch/assets-cdn/main/signal.json";
+        const response = await axios.get(registryUrl);
+        const data = response.data[id];
 
-        if (!data.file_5_url || !data.file_95_url) {
-            throw new Error("Liens manquants dans la base");
+        if (!data) {
+            throw new Error("Signal inconnu dans le registre JSON");
         }
 
         const [partA, partB] = await Promise.all([
@@ -19,7 +21,6 @@ export default async function handler(req, res) {
         res.setHeader('Content-Type', 'audio/mpeg');
         res.send(combined);
     } catch (e) {
-        // ICI : On affiche la vraie raison du bug
-        res.status(500).send(`Erreur : ${e.message} | URL tentée : https://1533.re/get_signal.php?id=${id}`);
+        res.status(500).send(`Erreur : ${e.message}`);
     }
 }
