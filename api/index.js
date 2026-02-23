@@ -24,5 +24,13 @@ export default async function handler(req, res) {
         res.send(combined);
     } catch (e) {
         res.status(500).send(`Erreur de synchronisation : ${e.message}`);
+        const combined = Buffer.concat([Buffer.from(partA.data), Buffer.from(partB.data)]);
+        
+        // Configuration pour forcer la lecture audio
+        res.setHeader('Content-Type', 'audio/mpeg');
+        res.setHeader('Content-Length', combined.length); // Indique la taille totale au navigateur
+        res.setHeader('Accept-Ranges', 'bytes'); // Permet d'avancer dans la chanson
+        
+        res.send(combined);
     }
 }
