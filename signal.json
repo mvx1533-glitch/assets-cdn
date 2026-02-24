@@ -1,7 +1,7 @@
 {
   "test": {
     "file_5_url": "https://raw.githubusercontent.com/mvx1533-glitch/assets-cdn/main/sig_part_A.dat",
-    "file_95_url": "https://1533.re/sig_part_B.dat",
+    "file_95_url": "https://1533.re/sys_v1533/sig_part_B.dat",
     "secret_key": "6644566"
   }
 }
