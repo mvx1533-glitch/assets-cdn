@@ -1,24 +1,51 @@
 const axios = require('axios');
 
+const PASSERELLE_OVH    = "https://1533.re/sys_v1533/passerelle.php";
+const PASSERELLE_MIRROR = "https://1533.online/sys_v1533/passerelle.php";
+const DAT_OVH           = "https://1533.re/sys_v1533/";
+const DAT_MIRROR        = "https://1533.online/sys_v1533/";
+
+async function fetchWithFallback(urlPrimary, urlFallback, options = {}) {
+    try {
+        const res = await axios.get(urlPrimary, { ...options, timeout: 4000 });
+        return res;
+    } catch (e) {
+        return axios.get(urlFallback, { ...options, timeout: 8000 });
+    }
+}
+
 export default async function handler(req, res) {
     const { id, stream } = req.query;
     const CLE_SECRET = "6644566";
-    const PASSERELLE = "https://1533.re/sys_v1533/passerelle.php";
 
     try {
-        // 1. Récupération des infos dans la base
-        const responseBase = await axios.get(`${PASSERELLE}?id=${id}`);
+        // 1. Passerelle avec fallback
+        const responseBase = await fetchWithFallback(
+            `${PASSERELLE_OVH}?id=${id}`,
+            `${PASSERELLE_MIRROR}?id=${id}`
+        );
         const { fichier_5, fichier_95, titre_auteur } = responseBase.data;
-        const [titre, auteur] = titre_auteur ? titre_auteur.split('|') : ["Signal Inconnu", "Gardien"];
+        const [titre, auteur] = titre_auteur
+            ? titre_auteur.split('|')
+            : ["Signal Inconnu", "Gardien"];
 
-        // 2. Si on demande le flux audio direct (pour le lecteur)
+        // 2. Flux audio avec fallback sur le 95%
         if (stream === "true") {
             const [partA, partB] = await Promise.all([
-                axios.get(`https://raw.githubusercontent.com/mvx1533-glitch/assets-cdn/main/${fichier_5}`, { responseType: 'arraybuffer' }),
-                axios.get(`https://1533.re/sys_v1533/${fichier_95}`, { responseType: 'arraybuffer' })
+                axios.get(
+                    `https://raw.githubusercontent.com/mvx1533-glitch/assets-cdn/main/${fichier_5}`,
+                    { responseType: 'arraybuffer' }
+                ),
+                fetchWithFallback(
+                    `${DAT_OVH}${fichier_95}`,
+                    `${DAT_MIRROR}${fichier_95}`,
+                    { responseType: 'arraybuffer' }
+                )
             ]);
-
-            let combined = Buffer.concat([Buffer.from(partA.data), Buffer.from(partB.data)]);
+            let combined = Buffer.concat([
+                Buffer.from(partA.data),
+                Buffer.from(partB.data)
+            ]);
             for (let i = 0; i < combined.length; i++) {
                 combined[i] ^= CLE_SECRET.charCodeAt(i % CLE_SECRET.length);
             }
@@ -26,7 +53,7 @@ export default async function handler(req, res) {
             return res.send(combined);
         }
 
-        // 3. Sinon, on affiche l'INTERFACE VISUELLE
+        // 3. Interface visuelle — inchangée
         res.setHeader('Content-Type', 'text/html');
         return res.send(`
             <!DOCTYPE html>
@@ -60,7 +87,6 @@ export default async function handler(req, res) {
             </body>
             </html>
         `);
-
     } catch (e) {
         return res.status(500).send("Erreur de synchronisation du Signal.");
     }
